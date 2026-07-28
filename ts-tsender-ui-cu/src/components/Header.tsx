@@ -7,7 +7,7 @@ export default function Header() {
       {/* Left Side */}
       <div className="flex items-center gap-6">
         <a
-          href="https://github.com/barnabasmunuhe/TSender"
+          href="https://github.com/barnabasmunuhe/Full-Stack-Web3-Learning-repo"
           target="_blank"
           rel="noopener noreferrer"
           className="text-2xl hover:text-gray-600 transition-colors"
