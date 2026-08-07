@@ -3,7 +3,7 @@ import { FaGithub } from "react-icons/fa";
 
 export default function Header() {
   return (
-    <header className="flex items-center justify-between px-6 py-4 border-b">
+    <header className="flex items-center justify-between p-4 border-b bg-grey-100 shadow-md">
       {/* Left Side */}
       <div className="flex items-center gap-6">
         <a
