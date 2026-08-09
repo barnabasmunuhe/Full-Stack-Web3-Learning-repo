@@ -25,7 +25,7 @@ export default function InputForm({
 
       {large ? (
         <textarea
-          className="`bg-white py-2 px-3 border border-zinc-300 placeholder:text-zinc-500 text-zinc-900 shadow-xs rounded-lg focus:ring-[4px] focus:ring-zinc-400/15 focus:outline-none h-24 align-text-top`"
+          className="`bg-white py-2 px-3 border border-zinc-300 placeholder:text-zinc-500 text-white shadow-xs rounded-lg focus:ring-[4px] focus:ring-zinc-400/15 focus:outline-none h-24 align-text-top`"
           placeholder={placeholder}
           value={value}
           onChange={onChange}
@@ -33,7 +33,7 @@ export default function InputForm({
         />
       ) : (
         <input
-          className={"bg-white py-2 px-3 border border-zinc-300 placeholder:text-zinc-500 text-zinc-900 shadow-xs rounded-lg focus:ring-[4px] focus:ring-zinc-400/15 focus:outline-none"}
+          className={"bg-white py-2 px-3 border border-zinc-300 placeholder:text-zinc-500 text-white shadow-xs rounded-lg focus:ring-[4px] focus:ring-zinc-400/15 focus:outline-none"}
           type={type}
           placeholder={placeholder}
           value={value}
