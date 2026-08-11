@@ -39,6 +39,7 @@ export default function AirdropForm() {
 
         const tSenderContractAddress = chainsToTSender[chainId]["tsender"]
         const approvedAmount = await getApprovedAmount(tSenderContractAddress)// will get how much is Aprroved
+        console.log("Approved amount: ", approvedAmount)
     }
 
     return (
