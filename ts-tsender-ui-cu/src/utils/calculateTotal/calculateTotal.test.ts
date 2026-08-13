@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateTotal } from "../calculateTotal";
+import { calculateTotal } from "./calculateTotal";
 
 describe("calculateTotal", () => {
   it("should calculate the total of newline-delimited amounts", () => {
