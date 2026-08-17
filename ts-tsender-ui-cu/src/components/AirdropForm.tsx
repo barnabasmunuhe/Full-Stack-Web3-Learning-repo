@@ -2,8 +2,8 @@
 import InputField from "@/components/ui/InputField"
 import { useState, useMemo} from "react"
 import {chainsToTSender, tsenderAbi, erc20Abi} from "@/constants"
-import { useChainId, useConfig, useAccount} from 'wagmi'
-import { readContract } from '@wagmi/core'
+import { useChainId, useConfig, useAccount, useWriteContract} from 'wagmi'
+import { readContract, waitForTransactionReceipt} from '@wagmi/core'
 import { calculateTotal } from "@/utils"
 
 export default function AirdropForm() {
@@ -14,10 +14,12 @@ export default function AirdropForm() {
     const config = useConfig()
     const account = useAccount()
     const total = useMemo(() => calculateTotal(amounts), [amounts]);
+    const {data: hash, isPending, writeContractAsync} = useWriteContract()
 
 console.log(total);
 
     async function getApprovedAmount(tsenderContractAddress: string | null) : Promise<number> {
+        // Making sure we have a valid tsenderContractAddress before proceeding(The contract MUST have been deployed to the chain(s) we are connected to)
         if(!tsenderContractAddress) {
             alert("No address found, Please use a supported chain")
             return 0
@@ -43,7 +45,50 @@ console.log(total);
 
         const tSenderContractAddress = chainsToTSender[chainId]["tsender"]
         const approvedAmount = await getApprovedAmount(tSenderContractAddress)// will get how much is Aprroved
-        console.log("Approved amount: ", approvedAmount)
+        // console.log("Approved amount: ", approvedAmount)
+
+        if(approvedAmount < total) {//Then we wanna call the approve function on the token contract to approve the Tsender contract to spend our tokens
+            const approveResponse = await writeContractAsync({
+                abi: erc20Abi,
+                address: tokenAddress as `0x${string}`,
+                functionName: "approve",
+                args: [tSenderContractAddress as `0x${string}`, BigInt(total)],
+            })
+            // We have to wait for the tx to get mined before we can call the airdrop function on the Tsender contract
+            // You can wait directly using a function OR use a hook to wait for the transaction to be confirmed
+            const approvalReceipt = await waitForTransactionReceipt(config, {
+                hash: approveResponse
+            })
+            // if confirmed
+            console.log("Approval confirmed: ", approvalReceipt)
+
+            await writeContractAsync({
+                abi: tsenderAbi,
+                address: tokenAddress as `0x${string}`,
+                functionName: "airdropERC20",
+                args: [
+                    tokenAddress,
+                    // Comma or new line separated
+                    recipientAddresses.split(/[,\n]+/).map(addr => addr.trim()).filter(addr => addr !== ''),
+                    amounts.split(/[,\n]+/).map(amt => amt.trim()).filter(amt => amt !== ''),
+                    BigInt(total),
+                ],
+            })
+        } else {
+            await writeContractAsync({
+                abi: tsenderAbi,
+                address: tokenAddress as `0x${string}`,
+                functionName: "airdropERC20",
+                args: [
+                    tokenAddress,
+                    // Comma or new line separated
+                    recipientAddresses.split(/[,\n]+/).map(addr => addr.trim()).filter(addr => addr !== ''),
+                    amounts.split(/[,\n]+/).map(amt => amt.trim()).filter(amt => amt !== ''),
+                    BigInt(total),
+                ],
+            })
+        }
+
     }
 
     return (
