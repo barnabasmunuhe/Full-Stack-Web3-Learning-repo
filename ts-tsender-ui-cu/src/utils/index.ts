@@ -1,1 +1,1 @@
-export {calculateTotal} from "./calculateTotal/calculateTotal"
+export { calculateTotal } from "./calculateTotal/calculateTotal";
