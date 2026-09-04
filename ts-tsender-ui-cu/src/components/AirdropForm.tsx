@@ -1,6 +1,6 @@
 "use client";
 import InputField from "@/components/ui/InputField";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect} from "react"; // useMemo: Calculates/remeber a value.  // useEffect:enables side effects, saving & retrieving data from localStorage.(performing somthing because something happened.)
 import { chainsToTSender, tsenderAbi, erc20Abi } from "@/constants";
 import {
   useChainId,
@@ -14,13 +14,15 @@ import { calculateTotal } from "@/utils";
 import { CgSpinner } from "react-icons/cg";
 
 export default function AirdropForm() {
+  // CONSTANTS
   const [tokenAddress, setTokenAddress] = useState("");
   const [recipientAddresses, setRecipientAddresses] = useState("");
   const [amounts, setAmounts] = useState("");
   const chainId = useChainId();
   const config = useConfig();
   const account = useAccount();
-  const total = useMemo(() => calculateTotal(amounts), [amounts]);
+  const total = useMemo(() => calculateTotal(amounts), [amounts]); //useMemo is a react hook that caches the result of a function call,
+  // preventing unnecessary recalculations when the component re-renders OR when the dependencies (amounts) change. It will only recalculate the total when the amounts change, otherwise it will return the cached value.
   console.log(total);
   const {
     data: hash,
@@ -29,11 +31,13 @@ export default function AirdropForm() {
     writeContractAsync,
   } = useWriteContract();
   const {
-    isLoading: isConfirming,
+    isLoading: isConfirming, 
     isSuccess: isConfirmed,
     isError,
   } = useWaitForTransactionReceipt({ confirmations: 1, hash });
+  
 
+  // ASYNC FUNCTIONS
   async function getApprovedAmount(
     tsenderContractAddress: string | null,
   ): Promise<number> {
@@ -183,7 +187,7 @@ export default function AirdropForm() {
 
       <button
         onClick={handleSubmit}
-        disabled={isPending || isConfirming} //if isPending === false button behaves normally, if isPending === true button is disabled
+        disabled={isPending || isConfirming}// USER CANNOT INTERACT WITH THE BUTTON IF isPending || isCornfriming == true
         className="
             px-6 py-3
             bg-blue-600 hover:bg-blue-700
