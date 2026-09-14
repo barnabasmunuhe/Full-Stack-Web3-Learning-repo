@@ -1,0 +1,6 @@
+allowBuilds:
+  bufferutil: true
+  keccak: set this to true or false
+  sharp: false
+  unrs-resolver: false
+  utf-8-validate: true
