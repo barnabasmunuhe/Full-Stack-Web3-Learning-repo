@@ -1,17 +1,104 @@
 "use client";
 
 import InputField from "@/components/ui/InputField";
-import { useState } from "react";
+import { useState, useMemo} from "react";
+import { chainsToTSender, tsenderAbi, erc20Abi } from "@/constants";
+import {useChainId, useConfig, useAccount, useWriteContract} from "wagmi"; //wagmi hooks have context of our state & config
+import {readContract, waitForTransactionReceipt} from "@wagmi/core";
+import {calculateTotal} from "@/utils"
 
 export default function AirdropForm() {
   const [tokenAddress, setTokenAddress] = useState("");
   const [recipientAddress, setRecipientAddress] = useState("");
   const [tokenAmount, setTokenAmount] = useState("");
+  const totals: number = useMemo(() => calculateTotal(tokenAmount), [tokenAmount])
+
+  const chainId = useChainId(); // antime the user updates to a different chain this hook will update the chainId variable to the new chainId
+  const config = useConfig();
+  const account = useAccount();
+  const {data: hash, isPending, writeContractAsync} = useWriteContract();
+
+  async function getApprovedAmount(tSenderAddress: string | null) : Promise<number> {
+    if (!tSenderAddress) {
+  alert("Unsupported chain");
+  return 0;
+}
+    // read from the chain to see if we have approved enough tokens
+    const response = await readContract(config, {
+      abi: erc20Abi,
+      address: tokenAddress as `0x${string}`,
+      functionName: "allowance",
+      args: [account.address, tSenderAddress as `0x${string}`],
+    })
+    // THIS IS SAME AS: token.allowance(acount.address, tSenderAddress)
+    return response as number;
+  }
 
   async function handleSubmit() {
-    console.log(tokenAddress);
-    console.log(recipientAddress);
-    console.log(tokenAmount);
+    // If already approved, send the tokens to the recipients
+    // OTHERWISE:
+    // Approve our tsender contract to send our tokens
+    // Wait for the transaction to be mined
+    const tSenderAddress = chainsToTSender[chainId]["tsender"]; //getting the correct chain where TSender contract has been deployed to.
+    if (!tSenderAddress) {
+  alert("Unsupported chain");
+  return;
+}
+    const approvedAmount = await getApprovedAmount(tSenderAddress);// will get how much is approved
+    // console.log("approvedAmount: ", approvedAmount); //displays the approved amount which in our case will be 0n
+
+    if (approvedAmount < totals) {
+      // -Gives us the hash of the transaction once sent to the blockchain
+      const approvalHash = await writeContractAsync({
+        abi: erc20Abi,
+        address: tokenAddress as `0x${string}`,
+        functionName: "approve",
+        args: [tSenderAddress as `0x${string}`, BigInt(totals)]
+      })
+      // -BUT wait for the transaction to be mined
+        const approvalReceipt = await waitForTransactionReceipt(config, {
+          hash: approvalHash
+        });
+        console.log("Approval confirmed", approvalReceipt)
+        
+        await writeContractAsync({
+        abi: tsenderAbi,
+        address: tSenderAddress as `0x${string}`,
+        functionName: "airdropERC20",
+        args: [
+          tokenAddress,
+          // Comma or new line separated
+          recipientAddress
+            .split(/[,\n]+/)
+            .map((addr) => addr.trim())
+            .filter((addr) => addr !== ""),
+          tokenAmount
+            .split(/[,\n]+/)
+            .map((amt) => amt.trim())
+            .filter((amt) => amt !== ""),
+          BigInt(totals),
+        ],
+      });
+    } else {
+      await writeContractAsync({
+        abi: tsenderAbi,
+        address: tSenderAddress as `0x${string}`,
+        functionName: "airdropERC20",
+        args: [
+          tokenAddress,
+          // Comma or new line separated
+          recipientAddress
+            .split(/[,\n]+/)
+            .map((addr) => addr.trim())
+            .filter((addr) => addr !== ""),
+          tokenAmount
+            .split(/[,\n]+/)
+            .map((amt) => amt.trim())
+            .filter((amt) => amt !== ""),
+          BigInt(totals),
+        ],
+      });
+    }
   }
 
   return (
@@ -35,7 +122,17 @@ export default function AirdropForm() {
         onChange={(e) => setTokenAmount(e.target.value)}
       />
 
-      <button onClick={handleSubmit}>Send Tokens</button>
+      <button onClick={handleSubmit}
+        className="
+            px-6 py-3
+            bg-blue-600 hover:bg-blue-700
+            text-white font-semibold 
+            rounded-lg 
+            shadow-sm
+            transition-colors duration-200
+            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+            disabled:opacity-50 disabled:cursor-not-allowed"
+      >Send Tokens</button>
     </div>
   )
 }
