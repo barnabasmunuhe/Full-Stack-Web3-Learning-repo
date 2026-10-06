@@ -1,35 +1,48 @@
 "use client";
 
 import InputField from "@/components/ui/InputField";
-import { useState, useMemo} from "react";
+import TransactionDetails from "@/components/ui/TransactionDetails";
+import { useState, useMemo } from "react";
 import { chainsToTSender, tsenderAbi, erc20Abi } from "@/constants";
-import {useChainId, useConfig, useAccount, useWriteContract} from "wagmi"; //wagmi hooks have context of our state & config
-import {readContract, waitForTransactionReceipt} from "@wagmi/core";
-import {calculateTotal} from "@/utils"
+import {
+  useChainId,
+  useConfig,
+  useAccount,
+  useWriteContract,
+  useReadContract,
+} from "wagmi"; //wagmi hooks have context of our state & config
+import { readContract, waitForTransactionReceipt } from "@wagmi/core";
+import { formatUnits } from "viem"; //To convert wei amounts into readable tokens.
+import { calculateTotal } from "@/utils";
 
 export default function AirdropForm() {
   const [tokenAddress, setTokenAddress] = useState("");
   const [recipientAddress, setRecipientAddress] = useState("");
   const [tokenAmount, setTokenAmount] = useState("");
-  const totals: number = useMemo(() => calculateTotal(tokenAmount), [tokenAmount])
+  const totals: number = useMemo(
+    () => calculateTotal(tokenAmount),
+    [tokenAmount],
+  );
 
   const chainId = useChainId(); // antime the user updates to a different chain this hook will update the chainId variable to the new chainId
   const config = useConfig();
   const account = useAccount();
-  const {data: hash, isPending, writeContractAsync} = useWriteContract();
+  const { data: hash, isPending, writeContractAsync } = useWriteContract(); //hook from wagmi that returns  functions: data: hash, isPending, writeContractAsync that we can work with.
 
-  async function getApprovedAmount(tSenderAddress: string | null) : Promise<number> {
+  async function getApprovedAmount(
+    tSenderAddress: string | null,
+  ): Promise<number> {
     if (!tSenderAddress) {
-  alert("Unsupported chain");
-  return 0;
-}
+      alert("Unsupported chain");
+      return 0;
+    }
     // read from the chain to see if we have approved enough tokens
     const response = await readContract(config, {
       abi: erc20Abi,
       address: tokenAddress as `0x${string}`,
       functionName: "allowance",
       args: [account.address, tSenderAddress as `0x${string}`],
-    })
+    });
     // THIS IS SAME AS: token.allowance(acount.address, tSenderAddress)
     return response as number;
   }
@@ -41,10 +54,10 @@ export default function AirdropForm() {
     // Wait for the transaction to be mined
     const tSenderAddress = chainsToTSender[chainId]["tsender"]; //getting the correct chain where TSender contract has been deployed to.
     if (!tSenderAddress) {
-  alert("Unsupported chain");
-  return;
-}
-    const approvedAmount = await getApprovedAmount(tSenderAddress);// will get how much is approved
+      alert("Unsupported chain");
+      return;
+    }
+    const approvedAmount = await getApprovedAmount(tSenderAddress); // will get how much is approved
     // console.log("approvedAmount: ", approvedAmount); //displays the approved amount which in our case will be 0n
 
     if (approvedAmount < totals) {
@@ -53,15 +66,15 @@ export default function AirdropForm() {
         abi: erc20Abi,
         address: tokenAddress as `0x${string}`,
         functionName: "approve",
-        args: [tSenderAddress as `0x${string}`, BigInt(totals)]
-      })
+        args: [tSenderAddress as `0x${string}`, BigInt(totals)],
+      });
       // -BUT wait for the transaction to be mined
-        const approvalReceipt = await waitForTransactionReceipt(config, {
-          hash: approvalHash
-        });
-        console.log("Approval confirmed", approvalReceipt)
-        
-        await writeContractAsync({
+      const approvalReceipt = await waitForTransactionReceipt(config, {
+        hash: approvalHash,
+      });
+      console.log("Approval confirmed", approvalReceipt);
+
+      await writeContractAsync({
         abi: tsenderAbi,
         address: tSenderAddress as `0x${string}`,
         functionName: "airdropERC20",
@@ -122,7 +135,8 @@ export default function AirdropForm() {
         onChange={(e) => setTokenAmount(e.target.value)}
       />
 
-      <button onClick={handleSubmit}
+      <button
+        onClick={handleSubmit}
         className="
             px-6 py-3
             bg-blue-600 hover:bg-blue-700
@@ -132,7 +146,10 @@ export default function AirdropForm() {
             transition-colors duration-200
             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
             disabled:opacity-50 disabled:cursor-not-allowed"
-      >Send Tokens</button>
+      >
+        Send Tokens
+      </button>
+      <TransactionDetails tokenAddress={tokenAddress} totals={totals}/>
     </div>
-  )
+  );
 }
