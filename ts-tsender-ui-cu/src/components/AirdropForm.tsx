@@ -66,7 +66,7 @@ export default function AirdropForm() {
     // 2. Call the airdrop function on Tsender contract
     // 3. Wait for the transaction to be confirmed/mined
 
-    const tSenderContractAddress = chainsToTSender[chainId]["tsender"];
+    const tSenderContractAddress = chainsToTSender[chainId]["tsender"];//getting the correct chains & addresses where tSenderContract is deployed to.
     const approvedAmount = await getApprovedAmount(tSenderContractAddress); // will get how much is Aprroved
     // console.log("Approved amount: ", approvedAmount)
 
@@ -107,7 +107,7 @@ export default function AirdropForm() {
     } else {
       await writeContractAsync({
         abi: tsenderAbi,
-        address: tokenAddress as `0x${string}`,
+        address: tSender as `0x${string}`,
         functionName: "airdropERC20",
         args: [
           tokenAddress,

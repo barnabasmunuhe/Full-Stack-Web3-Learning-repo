@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { ReactNode } from "react";
+import { type ReactNode } from "react";
 import { Providers } from "./providers";
 import Header from "@/components/Header";
+import '@rainbow-me/rainbowkit/styles.css';
 
 export const metadata: Metadata = {
   title: "TSender",

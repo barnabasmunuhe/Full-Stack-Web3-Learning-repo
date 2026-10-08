@@ -2,7 +2,7 @@
 
 import { useReadContract } from "wagmi";
 import { erc20Abi } from "@/constants";
-import { formatUnits } from "viem";
+import { formatUnits } from "viem"; //To convert wei amounts into readable tokens.
 import { useMemo } from "react";
 
 interface TransactionDetailsProps {
@@ -22,7 +22,7 @@ export default function TransactionDetails({
       functionName: "name",
       query: { enabled: tokenAddress.length === 42 },// prevents unnecesary RPC calls while user is still typing
     });
-    // TOKEN DECIMALS
+    // TOKEN DECIMALS..
     const { data: tokenDecimals } = useReadContract({
       abi: erc20Abi,
       address: tokenAddress as `0x${string}`,

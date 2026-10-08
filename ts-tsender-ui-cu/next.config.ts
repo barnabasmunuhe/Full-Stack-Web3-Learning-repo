@@ -1,7 +1,8 @@
-import type { NextConfig } from "next";
+// import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   /* config options here */
+  reactStrictMode: true,
   output: 'export', // Tells Next.js not to expect a Node.js server and to export the app as static app
   distDir: 'out',
   images: {

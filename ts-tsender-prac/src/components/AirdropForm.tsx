@@ -2,7 +2,7 @@
 
 import InputField from "@/components/ui/InputField";
 import TransactionDetails from "@/components/ui/TransactionDetails";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { chainsToTSender, tsenderAbi, erc20Abi } from "@/constants";
 import {
   useChainId,
@@ -12,7 +12,6 @@ import {
   useReadContract,
 } from "wagmi"; //wagmi hooks have context of our state & config
 import { readContract, waitForTransactionReceipt } from "@wagmi/core";
-import { formatUnits } from "viem"; //To convert wei amounts into readable tokens.
 import { calculateTotal } from "@/utils";
 
 export default function AirdropForm() {
@@ -23,11 +22,37 @@ export default function AirdropForm() {
     () => calculateTotal(tokenAmount),
     [tokenAmount],
   );
+  const [isInitialized, setIsInitialized] = useState(false); //prevents the save effect from wiping all the saved data on very first render.
 
   const chainId = useChainId(); // antime the user updates to a different chain this hook will update the chainId variable to the new chainId
   const config = useConfig();
   const account = useAccount();
   const { data: hash, isPending, writeContractAsync } = useWriteContract(); //hook from wagmi that returns  functions: data: hash, isPending, writeContractAsync that we can work with.
+
+  // 1. Load saved data ONCE when the component mounts
+  useEffect(() => {
+    const savedData = localStorage.getItem("tsender_form_data");
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        if (parsed.tokenAddress) setTokenAddress(parsed.tokenAddress);
+        if (parsed.recipientAddress)
+          setRecipientAddress(parsed.recipientAddress);
+        if (parsed.tokenAmount) setTokenAmount(parsed.tokenAmount);
+      } catch (e) {
+        console.error("Failed to parse saved form data", e);
+      }
+    }
+    setIsInitialized(true);
+  }, []);
+
+  // 2. Save all data to localStorage whenever any input changes
+  useEffect(() => {
+    if (isInitialized) {
+      const dataToSave = { tokenAddress, recipientAddress, tokenAmount };
+      localStorage.setItem("tsender_form_data", JSON.stringify(dataToSave));
+    }
+  }, [tokenAddress, recipientAddress, tokenAmount, isInitialized]);
 
   async function getApprovedAmount(
     tSenderAddress: string | null,
@@ -112,6 +137,11 @@ export default function AirdropForm() {
         ],
       });
     }
+    // Clears both state & the local storage.
+    setTokenAddress("");
+    setRecipientAddress("");
+    setTokenAmount("");
+    localStorage.removeItem("tsender_form_data");
   }
 
   return (
@@ -149,7 +179,7 @@ export default function AirdropForm() {
       >
         Send Tokens
       </button>
-      <TransactionDetails tokenAddress={tokenAddress} totals={totals}/>
+      <TransactionDetails tokenAddress={tokenAddress} totals={totals} />
     </div>
   );
 }

@@ -1,4 +1,7 @@
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+// src/components/Header.tsx
+'use client';
+
+import ClientOnlyConnectButton from './ClientOnlyConnectButton'; // Changed import
 import { FaGithub } from "react-icons/fa";
 
 export default function Header() {
@@ -14,12 +17,11 @@ export default function Header() {
         >
           <FaGithub />
         </a>
-
         <h1 className="text-2xl font-bold">TSender</h1>
       </div>
 
       {/* Right Side */}
-      <ConnectButton />
+      <ClientOnlyConnectButton /> {/* Using the wrapper */}
     </header>
   );
 }
