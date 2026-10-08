@@ -2,7 +2,7 @@
 
 import InputField from "@/components/ui/InputField";
 import TransactionDetails from "@/components/ui/TransactionDetails";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react"; // useMemo: Calculates/remeber a value.  // useEffect:enables side effects, saving & retrieving data from localStorage.(performing somthing because something happened.)
 import { chainsToTSender, tsenderAbi, erc20Abi } from "@/constants";
 import {
   useChainId,
@@ -18,23 +18,26 @@ export default function AirdropForm() {
   const [tokenAddress, setTokenAddress] = useState("");
   const [recipientAddress, setRecipientAddress] = useState("");
   const [tokenAmount, setTokenAmount] = useState("");
+  const [isInitialized, setIsInitialized] = useState(false); //prevents the save effect from wiping all the saved data on very first render.
+
   const totals: number = useMemo(
+    // caches calculateTotals result to prevent recalculations whenever the component rerenders.
     () => calculateTotal(tokenAmount),
     [tokenAmount],
   );
-  const [isInitialized, setIsInitialized] = useState(false); //prevents the save effect from wiping all the saved data on very first render.
 
   const chainId = useChainId(); // antime the user updates to a different chain this hook will update the chainId variable to the new chainId
   const config = useConfig();
   const account = useAccount();
   const { data: hash, isPending, writeContractAsync } = useWriteContract(); //hook from wagmi that returns  functions: data: hash, isPending, writeContractAsync that we can work with.
 
-  // 1. Load saved data ONCE when the component mounts
+  // 1. Loading saved data ONCE when the component mounts
   useEffect(() => {
-    const savedData = localStorage.getItem("tsender_form_data");
+    const savedData = localStorage.getItem("tsender_form_data"); //Atomic bundling into a JSON object
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData);
+        // Updating the state dependancies
         if (parsed.tokenAddress) setTokenAddress(parsed.tokenAddress);
         if (parsed.recipientAddress)
           setRecipientAddress(parsed.recipientAddress);
@@ -44,7 +47,7 @@ export default function AirdropForm() {
       }
     }
     setIsInitialized(true);
-  }, []);
+  }, []); // [] this reads from the browser memory(localStorage) into React memory(state)
 
   // 2. Save all data to localStorage whenever any input changes
   useEffect(() => {
@@ -52,7 +55,7 @@ export default function AirdropForm() {
       const dataToSave = { tokenAddress, recipientAddress, tokenAmount };
       localStorage.setItem("tsender_form_data", JSON.stringify(dataToSave));
     }
-  }, [tokenAddress, recipientAddress, tokenAmount, isInitialized]);
+  }, [tokenAddress, recipientAddress, tokenAmount, isInitialized]); //Runs everytime the state dependancies change
 
   async function getApprovedAmount(
     tSenderAddress: string | null,
